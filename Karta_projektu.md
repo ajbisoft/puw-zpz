@@ -98,7 +98,7 @@ Funkcja|Imię i nazwisko|Data|Podpis
 Kierownik projektu|Anna Nowak|17.10.2025|___________
 Prowadzący|mgr Wojciech Moniuszko|17.10.2025|___________
 
-# Uwagi końcowe:
+## Uwagi końcowe:
 
 - Dokument powinien być przechowywany w repozytorium projektu.
 - Aktualizacja wersji dokumentu wymaga zgody kierownika projektu i prowadzącego.
