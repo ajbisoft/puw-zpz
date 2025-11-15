@@ -68,7 +68,7 @@ Obecnie brakuje jednej, centralnej i przejrzystej platformy przedstawiającej da
 | **Niefunkcjonalne** | Wydajność: maksymalny czas ładowania dashboardu i wizualizacji ≤ 5 sekund. |
 | **Niefunkcjonalne** | Dostępność: system dostępny przez minimum 99% czasu działania. |
 | **Niefunkcjonalne** | Responsywność: interfejs dostosowany do urządzeń desktopowych |
-| **Interfejsowe** | Przeglądarkowy interfejs użytkownika w technologii HTML5, CSS3 |
+| **Interfejsowe** | Przeglądarkowy interfejs użytkownika w technologii HTML5, CSS3, JS |
 
 ---
 
@@ -89,11 +89,11 @@ Obecnie brakuje jednej, centralnej i przejrzystej platformy przedstawiającej da
 |------------|--------------------------|------------------|
 | Zarządzanie projektem | Azure DevOps| Planowanie sprintów, śledzenie zadań |
 | Repozytorium | GitHub | Kontrola wersji kodu |
-| Analiza i projektowanie | ? | Diagramy UML, mockupy interfejsu |
-| Backend | ? | Logika przetwarzania danych i API |
-| Frontend | ? | Interaktywny interfejs webowy |
-| Baza danych | ?| Przechowywanie danych historycznych |
-| Wizualizacja danych | ? | Wykresy, mapy, trendy, statystyki |
+| Analiza i projektowanie | Mermaid | Diagramy UML, mockupy interfejsu |
+| Backend | Python | Logika przetwarzania danych i API |
+| Frontend | Bootstrap | Interaktywny interfejs webowy |
+| Baza danych | MySQL/SQL lite | Przechowywanie danych historycznych |
+| Wizualizacja danych | Bootstrap | Wykresy, mapy, trendy, statystyki |
 | Komunikacja | Discord | Spotkania, wymiana informacji |
 
 ---
@@ -121,6 +121,7 @@ Obecnie brakuje jednej, centralnej i przejrzystej platformy przedstawiającej da
 | 2 | Konflikty w zespole | Niskie | Średni | Jasny podział ról, komunikacja na Discord |
 | 3 | Utrata danych w repozytorium | Niskie | Wysoki | Regularne kopie GitHub, lokalne backupy |
 | 4 | Niedostarczenie dokumentacji | Niskie | Wysoki | Wczesne rozpoczęcie, przeglądy postępów |
+| 5 | Brak połączenia z internetem / przekoczenie liczby zapytań API | Wysokie | Wysoki | Przetrzymywanie danych historycznych w bazie danych |
 
 ---
 
