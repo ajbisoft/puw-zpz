@@ -10,7 +10,7 @@
 
 ### Niefunkcjonalne:
 - **Dostępność 24/7**
-- **Czas odpowiedzi < 2 sekundy**
+- **Czas odpowiedzi ≤ 5 sekundy**
 - **Zgodność z RODO**
 - **Szyfrowanie danych in-transit i at rest**
 
