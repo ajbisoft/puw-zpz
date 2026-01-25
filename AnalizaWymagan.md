@@ -114,7 +114,7 @@ flowchart TD
 - **Dostępność 24/7**  
   System powinien być dostępny dla użytkowników przez całą dobę, siedem dni w tygodniu, z minimalnymi przerwami serwisowymi. Oznacza to, że użytkownicy mogą korzystać z aplikacji w dowolnym momencie, bez zauważalnych przerw w działaniu.
 
-- **Czas odpowiedzi < 2 sekundy**  
+- **Czas odpowiedzi ≤ 5 sekundy**  
   Aplikacja powinna reagować na działania użytkownika w czasie krótszym niż 2 sekundy w 95% przypadków. Dotyczy to ładowania danych, wyświetlania mapy oraz generowania podstawowych analiz, co wpływa na komfort korzystania i płynność interakcji.
 
 - **Zgodność z RODO**  
