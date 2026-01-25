@@ -115,7 +115,7 @@ flowchart TD
   System powinien być dostępny dla użytkowników przez całą dobę, siedem dni w tygodniu, z minimalnymi przerwami serwisowymi. Oznacza to, że użytkownicy mogą korzystać z aplikacji w dowolnym momencie, bez zauważalnych przerw w działaniu.
 
 - **Czas odpowiedzi ≤ 5 sekundy**  
-  Aplikacja powinna reagować na działania użytkownika w czasie krótszym niż 2 sekundy w 95% przypadków. Dotyczy to ładowania danych, wyświetlania mapy oraz generowania podstawowych analiz, co wpływa na komfort korzystania i płynność interakcji.
+  Aplikacja powinna reagować na działania użytkownika w czasie równym lub krótszym niż 5 sekundy w 95% przypadków. Dotyczy to ładowania danych, wyświetlania mapy oraz generowania podstawowych analiz, co wpływa na komfort korzystania i płynność interakcji.
 
 - **Zgodność z RODO**  
   System musi spełniać wymogi Rozporządzenia o Ochronie Danych Osobowych (RODO), w tym: minimalizację danych, możliwość usunięcia konta, informowanie o sposobach przetwarzania danych, zabezpieczenie danych osobowych oraz przetwarzanie ich wyłącznie w określonych celach.
