@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load l10n %}
+
+{% block title %}Moje lokalizacje{% endblock %}
+
+{% block content %}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h3 mb-4">Moje lokalizacje</h1>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if locations %}
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Nazwa</th>
+                            <th>Region</th>
+                            <th>Współrzędne</th>
+                            <th>Dodano</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loc in locations %}
+                            <tr>
+                                <td>
+                                    {% if loc.custom_alias %}
+                                        <strong>{{ loc.custom_alias }}</strong><br>
+                                        <span class="text-muted">{{ loc.name }}</span>
+                                    {% else %}
+                                        <strong>{{ loc.name }}</strong>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {{ loc.admin1|default:"-" }}
+                                    {% if loc.admin2 %}
+                                        <br><span class="text-muted">{{ loc.admin2 }}</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {{ loc.latitude }}, {{ loc.longitude }}
+                                </td>
+
+                                <td>
+                                    {{ loc.added_at|date:"Y-m-d H:i" }}
+                                </td>
+
+                                <td>
+                                    <form method="post" action="{% url 'air_quality_search' %}">
+                                        {% csrf_token %}
+
+                                        <input type="hidden" name="action" value="select_location">
+                                        <input type="hidden" name="city_name" value="{{ loc.name }}">
+                                        <input type="hidden" name="location_name" value="{{ loc.name }}">
+                                        <input type="hidden" name="latitude" value="{{ loc.latitude|unlocalize }}">
+                                        <input type="hidden" name="longitude" value="{{ loc.longitude|unlocalize }}">
+                                        <input type="hidden" name="admin1" value="{{ loc.admin1 }}">
+                                        <input type="hidden" name="admin2" value="{{ loc.admin2 }}">
+
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            Wybierz stację
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">
+                Nie masz jeszcze zapisanych lokalizacji.
+            </p>
+
+            <a href="{% url 'air_quality_search' %}" class="btn btn-primary">
+                Sprawdź jakość powietrza
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
