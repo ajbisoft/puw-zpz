@@ -1,5 +1,6 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 
+from air_quality.models import Sensor, Measurement
 from air_quality.services.geocoding import search_locations
 from air_quality.services.gios_client import (
     get_all_stations,
@@ -8,7 +9,7 @@ from air_quality.services.gios_client import (
 )
 from air_quality.services.distance import find_nearest_station, find_stations_by_city
 from air_quality.services.measurements import get_latest_measurement
-
+from air_quality.services.aqi import calculate_station_aqi
 
 def get_air_quality_context(city_name, latitude, longitude, selected_location=None):
     stations = get_all_stations()
@@ -231,6 +232,7 @@ def air_quality_search(request):
                 return render(request, "air_quality_search.html", context)
 
             sensor_results = get_measurements_for_station(selected_station)
+            station_aqi = calculate_station_aqi(sensor_results)
 
             selected_location = {
                 "name": location_name or city_name,
@@ -246,6 +248,32 @@ def air_quality_search(request):
                 "nearest_station": get_station_details(selected_station),
                 "distance": None,
                 "sensors": sensor_results,
+                "station_aqi": station_aqi,
             }
 
     return render(request, "air_quality_search.html", context)
+
+def sensor_history(request, sensor_id):
+    sensor = get_object_or_404(Sensor, gios_id=sensor_id)
+
+    measurements = Measurement.objects.filter(
+        sensor=sensor,
+        value__isnull=False
+    ).order_by("timestamp")[:100]
+
+    labels = []
+    values = []
+
+    for measurement in measurements:
+        labels.append(measurement.timestamp.strftime("%Y-%m-%d %H:%M"))
+        values.append(measurement.value)
+
+    context = {
+        "sensor": sensor,
+        "station": sensor.station,
+        "measurements": measurements,
+        "labels": labels,
+        "values": values,
+    }
+
+    return render(request, "air_quality/sensor_history.html", context)

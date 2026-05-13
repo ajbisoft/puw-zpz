@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
 
 
 class RegisterForm(UserCreationForm):
@@ -58,3 +58,51 @@ class LoginForm(AuthenticationForm):
             "placeholder": "Podaj hasło"
         })
     )
+
+class AccountUpdateForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["username", "email"]
+        labels = {
+            "username": "Nazwa użytkownika",
+            "email": "Adres e-mail",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["username"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "Nazwa użytkownika"
+        })
+
+        self.fields["email"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "Adres e-mail"
+        })
+
+class BootstrapPasswordChangeForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["old_password"].label = "Obecne hasło"
+        self.fields["new_password1"].label = "Nowe hasło"
+        self.fields["new_password2"].label = "Powtórz nowe hasło"
+
+        self.fields["old_password"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "Wpisz obecne hasło"
+        })
+
+        self.fields["new_password1"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "Wpisz nowe hasło"
+        })
+
+        self.fields["new_password2"].widget.attrs.update({
+            "class": "form-control",
+            "placeholder": "Powtórz nowe hasło"
+        })
+
+        for field in self.fields.values():
+            field.help_text = ""

@@ -8,14 +8,17 @@ def get_latest_measurement(sensor, sensor_data):
 
     values = sensor_data.get("Lista danych pomiarowych", [])
 
+    base_result = {
+        "sensor_id": sensor.get("Identyfikator stanowiska"),
+        "param_name": sensor.get("Wskaźnik"),
+        "param_code": sensor.get("Wskaźnik - kod"),
+        "date": None,
+        "value": None,
+        "unit": "µg/m³",
+    }
+
     if not values:
-        return {
-            "param_name": sensor.get("Wskaźnik"),
-            "param_code": sensor.get("Wskaźnik - kod"),
-            "date": None,
-            "value": None,
-            "unit": "µg/m³",
-        }
+        return base_result
 
     latest_valid_value = None
 
@@ -27,15 +30,10 @@ def get_latest_measurement(sensor, sensor_data):
             break
 
     if latest_valid_value is None:
-        return {
-            "param_name": sensor.get("Wskaźnik"),
-            "param_code": sensor.get("Wskaźnik - kod"),
-            "date": None,
-            "value": None,
-            "unit": "µg/m³",
-        }
+        return base_result
 
     return {
+        "sensor_id": sensor.get("Identyfikator stanowiska"),
         "param_name": sensor.get("Wskaźnik"),
         "param_code": sensor.get("Wskaźnik - kod"),
         "date": latest_valid_value.get("Data"),

@@ -154,6 +154,25 @@
                 <div class="card-body">
                     <h2 class="h4 mb-3">Wynik dla: {{ city_name }}</h2>
 
+                    {% if station_aqi %}
+                        <div 
+                            class="p-3 rounded text-white mb-4"
+                            style="background-color: {{ station_aqi.color }};"
+                        >
+                            <div class="small text-uppercase fw-semibold">
+                                Ogólna jakość powietrza
+                            </div>
+
+                            <div class="h4 mb-1">
+                                {{ station_aqi.level }}
+                            </div>
+
+                            <div class="small">
+                                {{ station_aqi.description }}
+                            </div>
+                        </div>
+                    {% endif %}
+
                     <div class="row">
                         <div class="col-md-6">
                             <p class="mb-1 text-muted">Wybrana stacja</p>
@@ -233,6 +252,7 @@
                                         <th>Wartość</th>
                                         <th>Jednostka</th>
                                         <th>Data pomiaru</th>
+                                        <th>Historia</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -243,6 +263,15 @@
                                             <td>{{ item.value|default_if_none:"Brak danych" }}</td>
                                             <td>{{ item.unit }}</td>
                                             <td>{{ item.date|default_if_none:"Brak daty" }}</td>
+                                            <td>
+                                                {% if item.sensor_id %}
+                                                    <a href="{% url 'sensor_history' item.sensor_id %}" class="btn btn-outline-primary btn-sm">
+                                                        Pokaż
+                                                    </a>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
