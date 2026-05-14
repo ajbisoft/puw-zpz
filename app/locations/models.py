@@ -25,7 +25,7 @@ class FavoriteLocation(models.Model):
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("user", "latitude", "longitude")
+        unique_together = ("user", "nearest_station_id")
 
     def __str__(self):
         return f"{self.name} - {self.user}"

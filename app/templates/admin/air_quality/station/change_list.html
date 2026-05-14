@@ -1,0 +1,25 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+    <li>
+        <a 
+            href="import-gios-all/" 
+            class="button"
+            onclick="return confirm('Czy na pewno chcesz pobrać dane ze wszystkich stacji? To może potrwać kilka minut.');"
+        >
+            Pobierz dane ze wszystkich stacji
+        </a>
+    </li>
+
+    <li>
+        <a 
+            href="send-air-quality-emails/" 
+            class="button"
+            onclick="return confirm('Czy na pewno chcesz wysłać powiadomienia e-mail do użytkowników?');"
+        >
+            Wyślij powiadomienia e-mail
+        </a>
+    </li>
+
+    {{ block.super }}
+{% endblock %}

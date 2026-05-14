@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load l10n %}
 
-{% block title %}Moje lokalizacje{% endblock %}
+{% block title %}Moje stacje pomiarowe{% endblock %}
 
 {% block content %}
 
 <div class="card shadow-sm">
     <div class="card-body">
-        <h1 class="h3 mb-4">Moje lokalizacje</h1>
+        <h1 class="h3 mb-4">Moje stacje pomiarowe</h1>
 
         {% if messages %}
             {% for message in messages %}
@@ -57,21 +57,36 @@
                                 </td>
 
                                 <td>
-                                    <form method="post" action="{% url 'air_quality_search' %}">
-                                        {% csrf_token %}
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <form method="post" action="{% url 'air_quality_search' %}">
+                                            {% csrf_token %}
 
-                                        <input type="hidden" name="action" value="select_location">
-                                        <input type="hidden" name="city_name" value="{{ loc.name }}">
-                                        <input type="hidden" name="location_name" value="{{ loc.name }}">
-                                        <input type="hidden" name="latitude" value="{{ loc.latitude|unlocalize }}">
-                                        <input type="hidden" name="longitude" value="{{ loc.longitude|unlocalize }}">
-                                        <input type="hidden" name="admin1" value="{{ loc.admin1 }}">
-                                        <input type="hidden" name="admin2" value="{{ loc.admin2 }}">
+                                            <input type="hidden" name="action" value="select_station">
+                                            <input type="hidden" name="city_name" value="{{ loc.name }}">
+                                            <input type="hidden" name="location_name" value="{{ loc.name }}">
+                                            <input type="hidden" name="latitude" value="{{ loc.latitude|unlocalize }}">
+                                            <input type="hidden" name="longitude" value="{{ loc.longitude|unlocalize }}">
+                                            <input type="hidden" name="admin1" value="{{ loc.admin1 }}">
+                                            <input type="hidden" name="admin2" value="{{ loc.admin2 }}">
+                                            <input type="hidden" name="station_id" value="{{ loc.nearest_station_id }}">
 
-                                        <button type="submit" class="btn btn-primary btn-sm">
-                                            Wybierz stację
-                                        </button>
-                                    </form>
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                Sprawdź jakość
+                                            </button>
+                                        </form>
+
+                                        <form method="post" action="{% url 'delete_favorite_station' loc.id %}">
+                                            {% csrf_token %}
+
+                                            <button 
+                                                type="submit" 
+                                                class="btn btn-outline-danger btn-sm"
+                                                onclick="return confirm('Czy na pewno chcesz usunąć tę stację z ulubionych?');"
+                                            >
+                                                Usuń
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -80,7 +95,7 @@
             </div>
         {% else %}
             <p class="text-muted">
-                Nie masz jeszcze zapisanych lokalizacji.
+                Nie masz jeszcze zapisanych stacji pomiarowych.
             </p>
 
             <a href="{% url 'air_quality_search' %}" class="btn btn-primary">

@@ -32,9 +32,22 @@ class RegisterForm(UserCreationForm):
                 "class": "form-control"
             })
 
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+
+        if email:
+            email = email.strip().lower()
+
+            if User.objects.filter(email__iexact=email).exists():
+                raise forms.ValidationError(
+                    "Konto z tym adresem e-mail już istnieje."
+                )
+
+        return email
+
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.email = self.cleaned_data["email"]
+        user.email = self.cleaned_data["email"].strip().lower()
 
         if commit:
             user.save()

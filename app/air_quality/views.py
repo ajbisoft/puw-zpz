@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 
-from air_quality.models import Sensor, Measurement
+from air_quality.models import Sensor, Station, Measurement
 from air_quality.services.geocoding import search_locations
 from air_quality.services.gios_client import (
     get_all_stations,
@@ -10,6 +10,7 @@ from air_quality.services.gios_client import (
 from air_quality.services.distance import find_nearest_station, find_stations_by_city
 from air_quality.services.measurements import get_latest_measurement
 from air_quality.services.aqi import calculate_station_aqi
+from air_quality.services.map_data import get_stations_map_data
 
 def get_air_quality_context(city_name, latitude, longitude, selected_location=None):
     stations = get_all_stations()
@@ -85,12 +86,110 @@ def get_station_details(station):
     }
 
 
+def get_latest_measurement_from_db(sensor_id):
+    """
+    Pobiera najnowszy zapisany pomiar z lokalnej bazy danych
+    dla konkretnego czujnika GIOŚ.
+    Jeśli nie ma realnej wartości, zwraca None.
+    """
+
+    sensor = Sensor.objects.filter(gios_id=sensor_id).first()
+
+    if sensor is None:
+        return None
+
+    measurement = Measurement.objects.filter(
+        sensor=sensor,
+        value__isnull=False
+    ).order_by("-timestamp").first()
+
+    if measurement is None:
+        return None
+
+    return {
+        "sensor_id": sensor.gios_id,
+        "param_name": sensor.param_name,
+        "param_code": sensor.param_code,
+        "date": measurement.timestamp.strftime("%Y-%m-%d %H:%M"),
+        "value": measurement.value,
+        "unit": "µg/m³",
+        "source": "Baza danych",
+        "is_historical": True,
+    }
+
+def deduplicate_measurements_by_param(measurements):
+    """
+    Usuwa duplikaty parametrów, np. dwa PM10.
+    Priorytet:
+    1. pomiar z API,
+    2. pomiar historyczny z wartością,
+    3. pomiar z nowszą datą, jeśli źródło takie samo.
+    """
+
+    best_by_param = {}
+
+    for measurement in measurements:
+        param_code = measurement.get("param_code")
+        value = measurement.get("value")
+
+        if not param_code:
+            continue
+
+        if value is None:
+            continue
+
+        current = best_by_param.get(param_code)
+
+        if current is None:
+            best_by_param[param_code] = measurement
+            continue
+
+        current_is_api = not current.get("is_historical", False)
+        new_is_api = not measurement.get("is_historical", False)
+
+        # API ma pierwszeństwo przed historycznymi.
+        if new_is_api and not current_is_api:
+            best_by_param[param_code] = measurement
+            continue
+
+        # Jeśli oba są tego samego typu, wybierz nowszy po dacie tekstowej.
+        current_date = current.get("date") or ""
+        new_date = measurement.get("date") or ""
+
+        if new_date > current_date:
+            best_by_param[param_code] = measurement
+
+    return list(best_by_param.values())
+
+
 def get_measurements_for_station(station):
-    sensors = get_station_sensors(
-        station["Identyfikator stacji"]
-    )
+    """
+    Pobiera aktualne pomiary z API GIOŚ.
+    Jeśli API nie zwróci danych dla czujnika, bierze najnowszy pomiar z bazy.
+    Na końcu usuwa duplikaty parametrów, np. dwa PM10.
+    """
 
     sensor_results = []
+
+    station_id = station.get("Identyfikator stacji")
+
+    try:
+        sensors = get_station_sensors(station_id)
+    except Exception:
+        sensors = []
+
+    # Jeśli API nie zwróciło listy czujników, próbujemy wziąć czujniki z bazy.
+    if not sensors:
+        db_station = Station.objects.filter(gios_id=station_id).first()
+
+        if db_station:
+            for sensor in db_station.sensors.all():
+                fallback_measurement = get_latest_measurement_from_db(sensor.gios_id)
+
+                if fallback_measurement is not None:
+                    sensor_results.append(fallback_measurement)
+
+        return deduplicate_measurements_by_param(sensor_results)
 
     for sensor in sensors:
         sensor_id = sensor.get("Identyfikator stanowiska")
@@ -100,17 +199,31 @@ def get_measurements_for_station(station):
 
         sensor_data = get_sensor_data(sensor_id)
 
+        # API nie zwróciło danych dla czujnika -> bierzemy najnowszy pomiar z bazy.
         if sensor_data is None:
+            fallback_measurement = get_latest_measurement_from_db(sensor_id)
+
+            if fallback_measurement is not None:
+                sensor_results.append(fallback_measurement)
+
             continue
 
         measurement = get_latest_measurement(sensor, sensor_data)
 
-        if measurement is None:
+        if measurement is None or measurement.get("value") is None:
+            fallback_measurement = get_latest_measurement_from_db(sensor_id)
+
+            if fallback_measurement is not None:
+                sensor_results.append(fallback_measurement)
+
             continue
+
+        measurement["source"] = "API GIOŚ"
+        measurement["is_historical"] = False
 
         sensor_results.append(measurement)
 
-    return sensor_results
+    return deduplicate_measurements_by_param(sensor_results)
 
 def air_quality_search(request):
     context = {}
@@ -277,3 +390,50 @@ def sensor_history(request, sensor_id):
     }
 
     return render(request, "air_quality/sensor_history.html", context)
+
+def stations_map(request):
+    stations_data = get_stations_map_data()
+
+    context = {
+        "stations_data": stations_data
+    }
+
+    return render(request, "air_quality/stations_map.html", context)
+
+def station_details(request, station_id):
+    db_station = get_object_or_404(Station, gios_id=station_id)
+
+    selected_station = {
+        "Identyfikator stacji": db_station.gios_id,
+        "Kod stacji": db_station.station_code,
+        "Nazwa stacji": db_station.name,
+        "Nazwa miasta": db_station.city_name,
+        "Gmina": db_station.commune,
+        "Powiat": db_station.district,
+        "Województwo": db_station.province,
+        "Ulica": db_station.street,
+        "WGS84 φ N": db_station.latitude,
+        "WGS84 λ E": db_station.longitude,
+    }
+
+    sensor_results = get_measurements_for_station(selected_station)
+    station_aqi = calculate_station_aqi(sensor_results)
+
+    selected_location = {
+        "name": db_station.name,
+        "latitude": db_station.latitude,
+        "longitude": db_station.longitude,
+        "admin1": db_station.province,
+        "admin2": db_station.district,
+    }
+
+    context = {
+        "city_name": db_station.city_name,
+        "selected_location": selected_location,
+        "nearest_station": get_station_details(selected_station),
+        "distance": None,
+        "sensors": sensor_results,
+        "station_aqi": station_aqi,
+    }
+
+    return render(request, "air_quality_search.html", context)

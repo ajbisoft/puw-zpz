@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Mapa jakości powietrza{% endblock %}
+
+{% block content %}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h1 class="h3 mb-2">Mapa jakości powietrza w Polsce</h1>
+
+        <p class="text-muted mb-0">
+            Mapa prezentuje najnowsze dane zapisane w lokalnej bazie aplikacji.
+            Kolor punktu oznacza ogólną jakość powietrza dla danej stacji.
+        </p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div id="map" style="height: 650px; width: 100%; border-radius: 8px;"></div>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Legenda</h2>
+
+        <div class="d-flex flex-wrap gap-3">
+            <div><span class="legend-box" style="background:#50B748;"></span> Bardzo dobra</div>
+            <div><span class="legend-box" style="background:#B0D235;"></span> Dobra</div>
+            <div><span class="legend-box" style="background:#F8C300;"></span> Umiarkowana</div>
+            <div><span class="legend-box" style="background:#F27921;"></span> Dostateczna</div>
+            <div><span class="legend-box" style="background:#E2001A;"></span> Zła</div>
+            <div><span class="legend-box" style="background:#8A0E1A;"></span> Bardzo zła</div>
+            <div><span class="legend-box" style="background:#6c757d;"></span> Brak danych</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .legend-box {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        margin-right: 6px;
+        vertical-align: middle;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+{{ stations_data|json_script:"stations-data" }}
+
+<script>
+    const stations = JSON.parse(document.getElementById("stations-data").textContent);
+
+    const map = L.map("map", {
+        center: [52.0, 19.0],
+        zoom: 6,
+        minZoom: 5,
+        maxZoom: 12
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+    }).addTo(map);
+
+    const polishBounds = [
+        [48.8, 13.8],
+        [55.0, 24.5]
+    ];
+
+    map.setMaxBounds(polishBounds);
+    map.fitBounds(polishBounds);
+
+    stations.forEach(station => {
+        if (!station.latitude || !station.longitude) {
+            return;
+        }
+
+        const color = station.color || "#6c757d";
+
+        const marker = L.circleMarker([station.latitude, station.longitude], {
+            radius: 8,
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.75,
+            weight: 2
+        }).addTo(map);
+
+        const level = station.aqi_level || "Brak danych";
+        const worstParam = station.worst_param || "brak";
+        const value = station.value !== null && station.value !== undefined ? station.value : "brak";
+
+        marker.bindPopup(`
+            <div style="min-width: 240px;">
+                <strong>${station.name}</strong><br>
+                <span>${station.city || ""}</span><br><br>
+
+                <strong>Jakość powietrza:</strong><br>
+                <span style="color: ${color}; font-weight: bold;">${level}</span><br><br>
+
+                <strong>Najgorszy parametr:</strong><br>
+                ${worstParam} = ${value}<br><br>
+
+                <a 
+                    href="/air-quality/station/${station.id}/"
+                    style="
+                        display: inline-block;
+                        padding: 6px 12px;
+                        background-color: #0d6efd;
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 4px;
+                        font-size: 14px;
+                    "
+                >
+                    Sprawdź szczegóły
+                </a>
+            </div>
+        `);
+    });
+</script>
+
+{% endblock %}

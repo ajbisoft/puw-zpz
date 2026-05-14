@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 
+from air_quality.services.email_alerts import send_air_quality_emails_for_favorite_stations
 from air_quality.models import Station, Sensor, Measurement, AQINorm
 from air_quality.services.gios_client import (
     get_all_stations,
@@ -146,6 +147,19 @@ class Command(BaseCommand):
         self.stdout.write(f"Stacje przetworzone: {total_stations}")
         self.stdout.write(f"Czujniki przetworzone: {total_sensors}")
         self.stdout.write(f"Nowe pomiary zapisane: {total_measurements}")
+
+        if total_measurements > 0:
+            self.stdout.write("")
+            self.stdout.write("Wysyłam powiadomienia e-mail dla ulubionych stacji...")
+
+            sent_count = send_air_quality_emails_for_favorite_stations()
+
+            self.stdout.write(
+                self.style.SUCCESS(f"Wysłano powiadomień e-mail: {sent_count}")
+            )
+        else:
+            self.stdout.write("")
+            self.stdout.write("Brak nowych pomiarów — pomijam wysyłanie powiadomień.")
 
     def import_aqi_norms(self):
         self.stdout.write("Importuję normy AQI...")

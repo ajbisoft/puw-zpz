@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 
 from .models import FavoriteLocation
 
@@ -39,26 +39,26 @@ def save_favorite_location(request):
     longitude = parse_float(longitude_raw)
 
     if not name or latitude is None or longitude is None:
-        messages.error(request, "Nie udało się zapisać lokalizacji.")
+        messages.error(request, "Nie udało się zapisać stacji.")
         return redirect("air_quality_search")
 
     favorite, created = FavoriteLocation.objects.get_or_create(
         user=request.user,
-        latitude=latitude,
-        longitude=longitude,
+        nearest_station_id=nearest_station_id or None,
         defaults={
             "name": name,
+            "latitude": latitude,
+            "longitude": longitude,
             "admin1": admin1,
             "admin2": admin2,
-            "nearest_station_id": nearest_station_id or None,
             "nearest_station_name": nearest_station_name,
         }
     )
 
     if created:
-        messages.success(request, f"Dodano lokalizację: {name}")
+        messages.success(request, f"Dodano stację: {name}")
     else:
-        messages.info(request, f"Lokalizacja {name} jest już zapisana.")
+        messages.info(request, f"Stacja {name} jest już zapisana.")
 
     return redirect("my_locations")
 
@@ -76,3 +76,21 @@ def my_locations(request):
             "locations": locations
         }
     )
+
+@login_required
+def delete_favorite_station(request, location_id):
+    if request.method != "POST":
+        return redirect("my_locations")
+
+    favorite_station = get_object_or_404(
+        FavoriteLocation,
+        id=location_id,
+        user=request.user
+    )
+
+    station_name = favorite_station.name
+    favorite_station.delete()
+
+    messages.success(request, f"Usunięto stację: {station_name}")
+
+    return redirect("my_locations")

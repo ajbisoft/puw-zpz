@@ -216,17 +216,18 @@
                         <form method="post" action="{% url 'save_favorite_location' %}" class="mt-3">
                             {% csrf_token %}
 
-                            <input type="hidden" name="name" value="{{ selected_location.name }}">
-                            <input type="hidden" name="latitude" value="{{ selected_location.latitude|unlocalize }}">
-                            <input type="hidden" name="longitude" value="{{ selected_location.longitude|unlocalize }}">
-                            <input type="hidden" name="admin1" value="{{ selected_location.admin1 }}">
-                            <input type="hidden" name="admin2" value="{{ selected_location.admin2 }}">
+                            <input type="hidden" name="name" value="{{ nearest_station.name }}">
+                            <input type="hidden" name="latitude" value="{{ nearest_station.latitude|unlocalize }}">
+                            <input type="hidden" name="longitude" value="{{ nearest_station.longitude|unlocalize }}">
+
+                            <input type="hidden" name="admin1" value="{{ nearest_station.province }}">
+                            <input type="hidden" name="admin2" value="{{ nearest_station.district }}">
 
                             <input type="hidden" name="nearest_station_id" value="{{ nearest_station.id }}">
                             <input type="hidden" name="nearest_station_name" value="{{ nearest_station.name }}">
 
                             <button type="submit" class="btn btn-success">
-                                Zapisz lokalizację
+                                Zapisz stację
                             </button>
                         </form>
                     {% elif not user.is_authenticated %}
@@ -252,6 +253,7 @@
                                         <th>Wartość</th>
                                         <th>Jednostka</th>
                                         <th>Data pomiaru</th>
+                                        <th>Źródło</th>
                                         <th>Historia</th>
                                     </tr>
                                 </thead>
@@ -263,6 +265,15 @@
                                             <td>{{ item.value|default_if_none:"Brak danych" }}</td>
                                             <td>{{ item.unit }}</td>
                                             <td>{{ item.date|default_if_none:"Brak daty" }}</td>
+
+                                            <td>
+                                                {% if item.is_historical %}
+                                                    <span class="badge bg-secondary">Historyczne</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">API</span>
+                                                {% endif %}
+                                            </td>
+
                                             <td>
                                                 {% if item.sensor_id %}
                                                     <a href="{% url 'sensor_history' item.sensor_id %}" class="btn btn-outline-primary btn-sm">
