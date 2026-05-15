@@ -1,9 +1,13 @@
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from air_quality.models import Station, Sensor, Measurement
-from air_quality.services.gios_client import get_station_sensors, get_sensor_data
+import time
+import threading
 
+from air_quality.models import Station, Sensor, Measurement
+from air_quality.services.gios_client import get_station_sensors, get_sensor_data, get_archival_sensor_data
+
+archival_import_lock = threading.Lock()
 
 def parse_float(value):
     if value is None or value == "":
@@ -177,3 +181,72 @@ def sync_station_measurements(station):
         total_saved += saved_count
 
     return total_saved
+
+def sync_archival_measurements_for_all_sensors(day_number, size=500, sleep_time=0.1):
+    if not archival_import_lock.acquire(blocking=False):
+        print("Import danych historycznych już trwa. Pomijam drugie uruchomienie.")
+        return {
+            "total_sensors": 0,
+            "total_saved_measurements": 0,
+            "total_failed": 0,
+            "already_running": True,
+        }
+
+    try:
+        sensors = Sensor.objects.select_related("station").all()
+        sensors_count = sensors.count()
+
+        total_sensors = 0
+        total_saved_measurements = 0
+        total_failed = 0
+
+        print("")
+        print("=== START IMPORTU DANYCH HISTORYCZNYCH ===")
+        print(f"Liczba czujników do przetworzenia: {sensors_count}")
+        print(f"Liczba dni wstecz: {day_number}")
+        print(f"Size: {size}")
+        print("")
+
+        for index, sensor in enumerate(sensors, start=1):
+            total_sensors += 1
+
+            print(
+                f"[{index}/{sensors_count}] "
+                f"Czujnik {sensor.gios_id} | {sensor.param_code} | "
+                f"Stacja: {sensor.station.name}"
+            )
+
+            sensor_data = get_archival_sensor_data(
+                sensor_id=sensor.gios_id,
+                day_number=day_number,
+                size=size,
+            )
+
+            if sensor_data is None:
+                total_failed += 1
+                print("  -> Brak danych / błąd pobierania")
+                print("")
+                continue
+
+            saved_count = save_measurements(sensor, sensor_data)
+            total_saved_measurements += saved_count
+
+            print(f"  -> Zapisano nowych pomiarów: {saved_count}")
+            print("")
+
+            time.sleep(sleep_time)
+
+        print("=== KONIEC IMPORTU DANYCH HISTORYCZNYCH ===")
+        print(f"Czujniki przetworzone: {total_sensors}")
+        print(f"Nowe pomiary: {total_saved_measurements}")
+        print(f"Błędy/brak danych: {total_failed}")
+        print("")
+
+        return {
+            "total_sensors": total_sensors,
+            "total_saved_measurements": total_saved_measurements,
+            "total_failed": total_failed,
+        }
+
+    finally:
+        archival_import_lock.release()

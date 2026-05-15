@@ -51,7 +51,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for measurement in measurements %}
+                        {% for measurement in table_measurements %}
                             <tr>
                                 <td>{{ measurement.timestamp|date:"Y-m-d H:i" }}</td>
                                 <td>{{ measurement.value }}</td>

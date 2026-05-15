@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<h1>Pobierz dane historyczne z API GIOŚ</h1>
+
+<p>
+    Ta operacja pobierze dane historyczne dla wszystkich czujników zapisanych w bazie.
+</p>
+
+<p>
+    Parametr <strong>size</strong> jest ustawiony na stałe jako <strong>500</strong>.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 16px;">
+        <label for="day_number">
+            Liczba dni wstecz:
+        </label>
+
+        <input 
+            type="number" 
+            id="day_number" 
+            name="day_number" 
+            min="1" 
+            max="365" 
+            value="20" 
+            required
+        >
+    </div>
+
+    <button 
+        type="submit" 
+        class="default"
+        onclick="return confirm('Czy na pewno chcesz pobrać dane historyczne dla wszystkich czujników? To może potrwać kilka minut.');"
+    >
+        Pobierz dane historyczne
+    </button>
+
+    <a href="{% url 'admin:air_quality_sensor_changelist' %}" class="button">
+        Anuluj
+    </a>
+</form>
+
+{% endblock %}

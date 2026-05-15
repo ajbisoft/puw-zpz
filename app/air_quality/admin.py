@@ -1,10 +1,11 @@
 from django.contrib import admin, messages
 from django.core.management import call_command
-from django.shortcuts import redirect
-from django.urls import path
+from django.shortcuts import redirect, render
+from django.urls import path, reverse
 
 from .models import Station, Sensor, Measurement, AQINorm
 from air_quality.services.email_alerts import send_air_quality_emails_for_favorite_stations
+from air_quality.services.sync import sync_archival_measurements_for_all_sensors
 
 @admin.register(Station)
 class StationAdmin(admin.ModelAdmin):
@@ -22,11 +23,6 @@ class StationAdmin(admin.ModelAdmin):
                 "import-gios-all/",
                 self.admin_site.admin_view(self.import_gios_all),
                 name="import_gios_all",
-            ),
-            path(
-                "send-air-quality-emails/",
-                self.admin_site.admin_view(self.send_air_quality_emails),
-                name="send_air_quality_emails",
             ),
         ]
 
@@ -57,29 +53,87 @@ class StationAdmin(admin.ModelAdmin):
 
         return redirect("..")
 
-    def send_air_quality_emails(self, request):
-        try:
-            sent_count = send_air_quality_emails_for_favorite_stations()
-
-            messages.success(
-                request,
-                f"Wysłano powiadomienia e-mail: {sent_count}."
-            )
-
-        except Exception as error:
-            messages.error(
-                request,
-                f"Nie udało się wysłać powiadomień e-mail: {error}"
-            )
-
-        return redirect("..")
-
 
 @admin.register(Sensor)
 class SensorAdmin(admin.ModelAdmin):
     list_display = ("param_code", "param_name", "station", "gios_id")
     search_fields = ("param_code", "param_name", "station__name")
     list_filter = ("param_code",)
+
+    change_list_template = "admin/air_quality/sensor/change_list.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+
+        custom_urls = [
+            path(
+                "import-archival-all/",
+                self.admin_site.admin_view(self.import_archival_all),
+                name="import_archival_all",
+            ),
+        ]
+
+        return custom_urls + urls
+
+    def import_archival_all(self, request):
+        if request.method == "POST":
+            day_number_raw = request.POST.get("day_number")
+
+            try:
+                day_number = int(day_number_raw)
+            except (TypeError, ValueError):
+                messages.error(request, "Podaj poprawną liczbę dni.")
+                return redirect(request.path)
+
+            if day_number <= 0:
+                messages.error(request, "Liczba dni musi być większa od 0.")
+                return redirect(request.path)
+
+            if day_number > 365:
+                messages.error(request, "Dla bezpieczeństwa podaj maksymalnie 365 dni.")
+                return redirect(request.path)
+
+            try:
+                messages.info(
+                    request,
+                    f"Rozpoczęto pobieranie danych historycznych z ostatnich {day_number} dni."
+                )
+
+                result = sync_archival_measurements_for_all_sensors(
+                    day_number=day_number,
+                    size=500,
+                    sleep_time=0.1,
+                )
+
+                messages.success(
+                    request,
+                    (
+                        "Zakończono pobieranie danych historycznych. "
+                        f"Czujniki przetworzone: {result['total_sensors']}, "
+                        f"nowe pomiary: {result['total_saved_measurements']}, "
+                        f"błędy/brak danych: {result['total_failed']}."
+                    )
+                )
+
+                return redirect("admin:air_quality_sensor_changelist")
+
+            except Exception as error:
+                messages.error(
+                    request,
+                    f"Wystąpił błąd podczas pobierania danych historycznych: {error}"
+                )
+                return redirect(request.path)
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Pobierz dane historyczne",
+        }
+
+        return render(
+            request,
+            "admin/air_quality/sensor/import_archival.html",
+            context
+        )
 
 
 @admin.register(Measurement)

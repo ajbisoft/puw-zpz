@@ -1,4 +1,7 @@
 from django.shortcuts import render, get_object_or_404
+from django.utils import timezone
+
+from datetime import timedelta
 
 from air_quality.models import Sensor, Station, Measurement
 from air_quality.services.geocoding import search_locations
@@ -367,12 +370,37 @@ def air_quality_search(request):
     return render(request, "air_quality_search.html", context)
 
 def sensor_history(request, sensor_id):
-    sensor = get_object_or_404(Sensor, gios_id=sensor_id)
+    sensor = Sensor.objects.filter(gios_id=sensor_id).first()
+
+    if sensor is None:
+        context = {
+            "sensor": None,
+            "station": None,
+            "measurements": [],
+            "table_measurements": [],
+            "labels": [],
+            "values": [],
+            "sensor_id": sensor_id,
+            "days": 5,
+            "error": "Brak danych historycznych dla tego czujnika. Czujnik nie został jeszcze zapisany w lokalnej bazie danych.",
+        }
+
+        return render(request, "air_quality/sensor_history.html", context)
+
+    days = 5
+    date_from = timezone.now() - timedelta(days=days)
 
     measurements = Measurement.objects.filter(
         sensor=sensor,
-        value__isnull=False
-    ).order_by("timestamp")[:100]
+        value__isnull=False,
+        timestamp__gte=date_from
+    ).order_by("timestamp")
+
+    table_measurements = Measurement.objects.filter(
+        sensor=sensor,
+        value__isnull=False,
+        timestamp__gte=date_from
+    ).order_by("-timestamp")
 
     labels = []
     values = []
@@ -385,8 +413,12 @@ def sensor_history(request, sensor_id):
         "sensor": sensor,
         "station": sensor.station,
         "measurements": measurements,
+        "table_measurements": table_measurements,
         "labels": labels,
         "values": values,
+        "sensor_id": sensor_id,
+        "days": days,
+        "error": None,
     }
 
     return render(request, "air_quality/sensor_history.html", context)
