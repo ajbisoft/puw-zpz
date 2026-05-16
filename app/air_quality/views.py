@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 
@@ -12,7 +14,17 @@ from air_quality.services.gios_client import (
 )
 from air_quality.services.distance import find_nearest_station, find_stations_by_city
 from air_quality.services.measurements import get_latest_measurement
-from air_quality.services.aqi import calculate_station_aqi
+from air_quality.services.aqi import calculate_station_aqi, calculate_aqi_status
+from air_quality.services.analytics import (
+    get_dashboard_tiles,
+    get_city_summary,
+    get_station_summary,
+    get_city_history,
+    get_station_history,
+    get_current_city_measurements,
+    get_current_station_measurements,
+    get_city_station_tiles,
+)
 from air_quality.services.map_data import get_stations_map_data
 
 def get_air_quality_context(city_name, latitude, longitude, selected_location=None):
@@ -469,3 +481,58 @@ def station_details(request, station_id):
     }
 
     return render(request, "air_quality_search.html", context)
+
+
+def analytics_dashboard(request):
+    tiles = get_dashboard_tiles()
+
+    return render(request, "air_quality/analytics_dashboard.html", {
+        "tiles": tiles,
+        "has_data": bool(tiles),
+    })
+
+
+def analytics_city(request, city_name):
+    summary = get_city_summary(city_name)
+    history = get_city_history(city_name)
+    current_measurements = get_current_city_measurements(city_name)
+    stations = get_city_station_tiles(city_name)
+    current_values = {item["param_code"]: item["value"] for item in current_measurements}
+    current_status = calculate_aqi_status([
+        {"param_code": param, "value": value}
+        for param, value in current_values.items()
+    ]) if current_values else None
+
+    return render(request, "air_quality/analytics_city.html", {
+        "city_name": city_name,
+        "summary": summary,
+        "history": history,
+        "history_json": json.dumps(history),
+        "current_measurements": current_measurements,
+        "current_status": current_status,
+        "stations": stations,
+        "has_history": bool(history.get("labels")),
+    })
+
+
+def analytics_station(request, station_id):
+    station = get_object_or_404(Station, gios_id=station_id)
+
+    summary = get_station_summary(station_id)
+    history = get_station_history(station_id)
+    current_measurements = get_current_station_measurements(station_id)
+    current_values = {item["param_code"]: item["value"] for item in current_measurements}
+    current_status = calculate_aqi_status([
+        {"param_code": param, "value": value}
+        for param, value in current_values.items()
+    ]) if current_values else None
+
+    return render(request, "air_quality/analytics_station.html", {
+        "station": station,
+        "summary": summary,
+        "history": history,
+        "history_json": json.dumps(history),
+        "current_measurements": current_measurements,
+        "current_status": current_status,
+        "has_history": bool(history.get("labels")),
+    })

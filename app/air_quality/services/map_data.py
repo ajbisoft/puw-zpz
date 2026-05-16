@@ -47,6 +47,15 @@ def get_stations_map_data():
         latest_measurements = get_latest_station_measurements(station)
         station_aqi = calculate_station_aqi(latest_measurements)
 
+        worst_param = None
+        worst_value = None
+        parameters = station_aqi.get("parameters", {})
+
+        if parameters:
+            worst_measurement = max(parameters.values(), key=lambda item: item["order"])
+            worst_param = worst_measurement.get("param_code")
+            worst_value = worst_measurement.get("value")
+
         map_points.append({
             "id": station.gios_id,
             "name": station.name,
@@ -57,8 +66,8 @@ def get_stations_map_data():
             "aqi_level": station_aqi.get("level"),
             "color": station_aqi.get("color"),
             "description": station_aqi.get("description"),
-            "worst_param": station_aqi.get("worst_param"),
-            "value": station_aqi.get("value"),
+            "worst_param": worst_param,
+            "value": worst_value,
         })
 
     return map_points

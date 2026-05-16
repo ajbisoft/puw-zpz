@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Panel jakości powietrza{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h1 class="display-6 fw-bold">Panel jakości powietrza</h1>
+            <p class="text-muted mb-0">Aktualny stan powietrza dla wybranych miast (okno 3 godz.). Kliknij kafelek, aby zobaczyć szczegóły.</p>
+        </div>
+    </div>
+
+    {% if not has_data %}
+        <div class="card border border-dashed rounded-4 shadow-sm p-5 text-center">
+            <div class="mb-3 display-5 text-secondary">😶</div>
+            <h2 class="h4">Brak wystarczających danych</h2>
+            <p class="text-muted mb-0">Nie ma aktualnych pomiarów z ostatnich 3 godzin dla żadnego miasta. Sprawdź, czy baza danych zawiera świeże pomiary i spróbuj ponownie.</p>
+        </div>
+    {% else %}
+        <div class="mb-4">
+            <div class="input-group bg-white rounded-3 shadow-sm">
+                <span class="input-group-text bg-white border-end-0">🔍</span>
+                <input id="citySearch" type="search" class="form-control border-start-0" placeholder="Wyszukaj miasto..." aria-label="Wyszukaj miasto">
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="cityTileGrid">
+            {% for tile in tiles %}
+                <div class="col city-tile" data-city="{{ tile.city_name|lower }}">
+                    <a href="{% url 'analytics_city' tile.city_name %}" class="text-decoration-none text-body">
+                        <div class="card h-100 shadow-sm border-0 overflow-hidden">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h3 class="h5 mb-1">{{ tile.city_name }}</h3>
+                                        <p class="text-muted small mb-0">Aktualny stan powietrza</p>
+                                    </div>
+                                    <span class="badge rounded-pill" style="background: {{ tile.status_color }}; color: #fff; font-size: 0.85rem;">{{ tile.status_label }}</span>
+                                </div>
+                                <div>
+                                    <p class="mb-0 fw-semibold">{{ tile.advice }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div id="noCityResults" class="alert alert-warning text-center mt-4" style="display: none;">
+            Brak miast pasujących do filtra.
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('citySearch');
+        if (!input) {
+            return;
+        }
+
+        const tiles = document.querySelectorAll('.city-tile');
+        const noResults = document.getElementById('noCityResults');
+
+        input.addEventListener('input', function() {
+            const value = this.value.trim().toLowerCase();
+            let visibleCount = 0;
+
+            tiles.forEach(tile => {
+                const city = tile.dataset.city || '';
+                const matches = city.includes(value);
+                tile.style.display = matches ? '' : 'none';
+                if (matches) visibleCount += 1;
+            });
+
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        });
+    });
+</script>
+{% endblock %}

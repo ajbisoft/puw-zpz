@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}{{ city_name }} – szczegóły jakości powietrza{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h1 class="display-6 fw-bold">{{ city_name }}</h1>
+            <p class="text-muted mb-0">Historia z ostatnich 7 dni i aktualny stan powietrza w mieście.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'analytics_dashboard' %}" class="btn btn-outline-secondary">Powrót</a>
+        </div>
+    </div>
+
+    {% if current_status or summary %}
+        {% if current_status %}
+            <div class="rounded-4 text-white p-4 mb-4" style="background: {{ current_status.color_hex }};">
+                <div>
+                    <h2 class="mb-1">Aktualny stan powietrza</h2>
+                    <p class="mb-2 fw-semibold">{{ current_status.description }}</p>
+                    <p class="mb-0">{{ current_status.advice }}</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="rounded-4 text-white p-4 mb-4" style="background: {{ summary.status.color_hex }};">
+                <div>
+                    <h2 class="mb-1">Aktualny stan powietrza</h2>
+                    <p class="mb-2 fw-semibold">{{ summary.status.description }}</p>
+                    <p class="mb-1">Brak najnowszych pomiarów w oknie 3 godzin. Pokazano ostatni dostępny stan.</p>
+                    <p class="mb-0">{{ summary.status.advice }}</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                            <div class="text-muted small fw-bold" style="min-width: 150px;">ŚREDNIA Z 7 DNI</div>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                {% for pollutant, value in summary.pollutants.items %}
+                                    <span class="badge border text-wrap" style="background: {{ value.avg_color }}; color: {{ value.avg_text_color }};">{{ pollutant }}: {{ value.avg_value|floatformat:1 }} µg/m³</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                            <div class="text-muted small fw-bold" style="min-width: 150px;">MAKSIMUM Z 7 DNI</div>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                {% for pollutant, value in summary.pollutants.items %}
+                                    <span class="badge border text-wrap" style="background: {{ value.max_color }}; color: {{ value.max_text_color }};">{{ pollutant }}: {{ value.max_value|floatformat:1 }} µg/m³</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-xl-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">Aktualne pomiary</h3>
+                    {% if current_measurements %}
+                        <div class="row row-cols-1 row-cols-md-2 g-3">
+                            {% for item in current_measurements %}
+                                <div class="col">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <div>
+                                                    <h4 class="h6 mb-1">{{ item.param_code }}</h4>
+                                                    <p class="text-muted small mb-0">{{ item.value|floatformat:1 }} µg/m³</p>
+                                                </div>
+                                                <span class="badge rounded-pill bg-white text-dark border" title="Odsetek normy: {{ item.percent_norm|floatformat:0 }}%">{{ item.percent_norm|floatformat:0 }}%</span>
+                                            </div>
+                                            <div class="progress" style="height: 10px;">
+                                                <div class="progress-bar {% if item.percent_norm|default:0 <= 100 %}bg-success{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ item.percent_norm|default:0|floatformat:0 }}%;" aria-valuenow="{{ item.percent_norm|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="display-6 text-secondary mb-3">📭</div>
+                            <p class="mb-0 text-muted">Brak aktualnych pomiarów w oknie 3 godzin.</p>
+                        </div>
+                    {% endif %}
+                    <small class="text-muted d-block mt-3">* Prezentowane są najnowsze dostępne pomiary ze stacji, nie starsze niż 3 godziny wstecz.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">7-dniowy trend</h3>
+                    {% if has_history %}
+                        <canvas id="historyChart" height="220"></canvas>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="display-6 text-secondary mb-3">🗓️</div>
+                            <p class="mb-0 text-muted">Brak danych historycznych z ostatnich 7 dni dla tego miasta.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if stations %}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 mb-3">
+                    <div>
+                        <h3 class="h5 mb-1">Stacje w {{ city_name }}</h3>
+                        <p class="text-muted small mb-0">Kliknij, aby zobaczyć szczegóły stacji i jej aktualny indeks AQI.</p>
+                    </div>
+                </div>
+                <div class="row row-cols-1 row-cols-md-2 g-3">
+                    {% for station in stations %}
+                        <div class="col">
+                            <a href="{% url 'analytics_station' station.station_id %}" class="text-decoration-none text-body">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div>
+                                                <h4 class="h6 mb-1">{{ station.name }}</h4>
+                                                <p class="text-muted small mb-0">Aktualny stan powietrza</p>
+                                            </div>
+                                            <span class="badge rounded-pill" style="background: {{ station.status_color }}; color: #fff; font-size: 0.85rem;">{{ station.status_label }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if has_history %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const historyData = {{ history_json|safe }};
+        const colors = {
+            PM10: '#50B748',
+            'PM2.5': '#B0D235',
+            O3: '#F8C300',
+            NO2: '#F27921',
+            SO2: '#E2001A',
+        };
+
+        const datasets = historyData.datasets.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: colors[dataset.label] || '#6c757d',
+            backgroundColor: colors[dataset.label] ? `${colors[dataset.label]}33` : '#6c757d33',
+            tension: 0.35,
+            fill: true,
+            pointRadius: 3,
+            borderWidth: 2,
+        }));
+
+        new Chart(document.getElementById('historyChart'), {
+            type: 'line',
+            data: {
+                labels: historyData.labels,
+                datasets,
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Średnia wartość (µg/m³)' },
+                    },
+                },
+            },
+        });
+    </script>
+{% endif %}
+{% endblock %}

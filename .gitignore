@@ -1,0 +1,14 @@
+# Baza danych i sekrety
+app/db.sqlite3
+app/.env
+
+# Dokumentacja analityczna
+ANALYTICS_MODULE_DOCUMENTATION.md
+app/README.md
+
+# Środowisko wirtualne i śmieci systemowe
+app/venv/
+venv/
+__pycache__/
+*.pyc
+*.txt
