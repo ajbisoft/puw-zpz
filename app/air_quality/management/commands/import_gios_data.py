@@ -54,6 +54,11 @@ AQI_NORMS_DATA = [
 ]
 
 
+ALLOWED_PARAMETERS = {
+    param_code
+    for param_code, index_level, min_value, max_value, color_hex in AQI_NORMS_DATA
+}
+
 class Command(BaseCommand):
     help = "Importuje stacje, czujniki, normy AQI i pomiary z API GIOŚ do bazy Django."
 
@@ -201,7 +206,10 @@ class Command(BaseCommand):
             return None
 
         if not param_code:
-            param_code = "UNKNOWN"
+            return None
+
+        if param_code not in ALLOWED_PARAMETERS:
+            return None
 
         sensor, created = Sensor.objects.update_or_create(
             gios_id=sensor_id,

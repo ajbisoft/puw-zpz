@@ -4,6 +4,8 @@ from django.utils.dateparse import parse_datetime
 import time
 import threading
 
+from air_quality.management.commands.import_gios_data import ALLOWED_PARAMETERS
+
 from air_quality.models import Station, Sensor, Measurement
 from air_quality.services.gios_client import get_station_sensors, get_sensor_data, get_archival_sensor_data
 
@@ -193,7 +195,9 @@ def sync_archival_measurements_for_all_sensors(day_number, size=500, sleep_time=
         }
 
     try:
-        sensors = Sensor.objects.select_related("station").all()
+        sensors = Sensor.objects.select_related("station").filter(
+            param_code__in=ALLOWED_PARAMETERS
+        )
         sensors_count = sensors.count()
 
         total_sensors = 0
