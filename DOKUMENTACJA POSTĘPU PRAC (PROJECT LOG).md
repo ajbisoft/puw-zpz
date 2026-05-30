@@ -58,7 +58,7 @@
 
 
 ### 6. Spotkanie 17.05.2026
-**Status:** Aktywny
+**Status:** nie odbyło się
 
 *   **Uwaga:** Spotkanie fizyczne nie odbyło się, ustalenia zostały podjęte drogą pisemną.
 *   **Analityka & QA:** Moduł analityczny został zakończony, a logika biznesowa pomyślnie zweryfikowana.
