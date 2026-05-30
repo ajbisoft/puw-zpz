@@ -50,14 +50,28 @@
 
 ### 5. Raport Bieżący
 **Data:** 15.05.2026  
-**Status:** Aktywny
+**Status:** Zakończony
 
 *   **Backend:** Szkielet gotowy, dane historyczne są już poprawnie pobierane do bazy.
 *   **Analityka:** Rozpoczęto prace nad modułem wizualizacji (wykresy, trendy).
 *   **QA:** Trwa review logiki biznesowej pod kątem zgodności z wymaganiami.
 
-#### UWAGA: Zaplanowane spotkanie statusowe: 17.05.2026
 
+### 6. Spotkanie 17.05.2026
+**Status:** Aktywny
+
+*   **Uwaga:** Spotkanie fizyczne nie odbyło się, ustalenia zostały podjęte drogą pisemną.
+*   **Analityka & QA:** Moduł analityczny został zakończony, a logika biznesowa pomyślnie zweryfikowana.
+*   **Wykryty problem / Optymalizacja:** Zauważono potrzebę optymalizacji procesu pobierania danych.
+*   **Decyzja:** Wprowadzenie ograniczenia pobierania danych wyłącznie do 5 kluczowych wskaźników (rezygnacja z analizy pozostałych parametrów w celu zwiększenia wydajności systemu).
+  
+
+### 7. Przegląd Stanu Aktualnego
+**Data spotkania:** 27.05.2026  
+**Status (na dzień 30.05.2026):** Wdrożone
+
+*   **Optymalizacja:** Zgodnie z wcześniejszymi ustaleniami pisemnymi, wdrożono ograniczenie pobierania danych.
+*   **Efekt:** System pobiera teraz wyłącznie 5 kluczowych wskaźników, co pozwoliło na optymalizację działania bazy danych i aplikacji.
 
 ---
 
